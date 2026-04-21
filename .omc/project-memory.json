@@ -1,0 +1,128 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776753575711,
+  "projectRoot": "/Users/hss/github3/androidTemplate",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Java/Kotlin",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "build.gradle"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "gradle",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "app"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 4,
+      "lastAccessed": 1776753575683,
+      "keyFiles": [
+        "build.gradle",
+        "proguard-rules.pro"
+      ]
+    },
+    "gradle": {
+      "path": "gradle",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1776753575684,
+      "keyFiles": []
+    },
+    "screenshoot": {
+      "path": "screenshoot",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1776753575686,
+      "keyFiles": [
+        "build.gradle",
+        "consumer-rules.pro",
+        "proguard-rules.pro"
+      ]
+    },
+    "app/src": {
+      "path": "app/src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1776753575687,
+      "keyFiles": []
+    },
+    "screenshoot/src": {
+      "path": "screenshoot/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1776753575689,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "accessCount": 3,
+      "lastAccessed": 1776753698219,
+      "type": "file"
+    },
+    {
+      "path": "settings.gradle",
+      "accessCount": 1,
+      "lastAccessed": 1776753601455,
+      "type": "file"
+    },
+    {
+      "path": "gradle.properties",
+      "accessCount": 1,
+      "lastAccessed": 1776753601534,
+      "type": "file"
+    },
+    {
+      "path": "screenshoot/src/main/AndroidManifest.xml",
+      "accessCount": 1,
+      "lastAccessed": 1776753608938,
+      "type": "file"
+    },
+    {
+      "path": "app/src/main/AndroidManifest.xml",
+      "accessCount": 1,
+      "lastAccessed": 1776753609160,
+      "type": "file"
+    },
+    {
+      "path": "jitpack.yml",
+      "accessCount": 1,
+      "lastAccessed": 1776753683563,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

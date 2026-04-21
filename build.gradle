@@ -1,16 +1,27 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
-    apply from: 'https://raw.githubusercontent.com/hss01248/flipperUtil/gradle7_5/remote3.gradle?a=2'
+
     apply from: 'https://raw.githubusercontent.com/hss01248/flipperUtil/gradle7_5/repos.gradle?a=2'
+    // Check for latest dependencies
     apply from: 'https://raw.githubusercontent.com/hss01248/flipperUtil/gradle7_5/deps/depsLastestChecker.gradle'
+    // Remote utilities script
+    //apply from: 'https://raw.githubusercontent.com/hss01248/flipperUtil/gradle7_5/remote3.gradle'
     apply from: 'https://raw.githubusercontent.com/hss01248/flipperUtil/gradle7_5/z_config/git_branch_info.gradle?a=1'
+    apply from: "https://raw.githubusercontent.com/hss01248/flipperUtil/gradle7_5/deps/uploadAllByMavenPublish.gradle?a=14"
     apply from: "app/configs/componentized.gradle"
     apply from: "app/configs/apk_shrink.gradle"
     //apply from: 'https://raw.githubusercontent.com/skyNet2017/AppUpdate/master/uploadToPyger.gradle'
-    ext.kotlin_version = '1.6.10'
+    ext.kotlin_version = '1.9.0'
+
+    // maven publish configuration
+    ext {
+        groupId = 'x.x.x'      // 从原先的 maven 相关插件配置里读取，如果没有，就保留 x.x.x
+        versionCode = 'x.x.x'           // 从原先的 maven 相关插件配置里读取，如果没有，就保留 x.x.x
+        isPublisToLocal = true
+    }
 
     dependencies {
-        classpath "com.android.tools.build:gradle:7.1.2"
+        classpath "com.android.tools.build:gradle:7.4.2"
         //classpath 'com.tencent.mm:AndResGuard-gradle-plugin:1.2.21'
         //classpath "com.tencent.bugly:symtabfileuploader:2.2.1"
         classpath 'org.greenrobot:greendao-gradle-plugin:3.3.0'
