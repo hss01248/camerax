@@ -3,6 +3,7 @@ package com.hss01248.screenshotapp;
 import androidx.multidex.MultiDexApplication;
 
 import com.blankj.utilcode.util.ThreadUtils;
+import com.blankj.utilcode.util.Utils;
 
 
 /**
@@ -16,7 +17,7 @@ public class BaseApp extends MultiDexApplication {
     @Override
     public void onCreate() {
         super.onCreate();
-
+        Utils.init(this);
 
         //crash();
     }
