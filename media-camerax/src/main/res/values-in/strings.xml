@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="toast_common_loading">Memuat...</string>
+
+    <string name="cam_photo_saved">Foto disimpan: %1$s</string>
+    <string name="cam_torch_control_failed">Tidak dapat mengontrol lampu kilat</string>
+    <string name="cam_no_camera_permission">Izin kamera diperlukan</string>
+    <string name="cam_start_camera_failed">Gagal memulai kamera: %1$s</string>
+    <string name="cam_cannot_create_photo_file">Tidak dapat membuat file foto</string>
+    <string name="cam_capture_failed">Gagal mengambil foto: %1$s</string>
+    <string name="cam_cannot_load_preview">Tidak dapat memuat gambar pratinjau</string>
+    <string name="cam_no_camera_mic_permission">Izin kamera dan mikrofon diperlukan</string>
+    <string name="cam_cannot_create_video_file">Tidak dapat membuat file video</string>
+    <string name="cam_video_record_failed">Gagal merekam: %1$s</string>
+    <string name="cam_cannot_load_video_preview">Tidak dapat memuat pratinjau video</string>
+
+    <color name="my_toast_bg_color">#B3000000</color>
+    <string name="toast_message">Pesan toast</string>
+    <string name="toasty_debug">(hanya untuk debug)</string>
+</resources>

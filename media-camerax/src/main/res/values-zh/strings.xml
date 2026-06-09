@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="toast_common_loading">加载中...</string>
+
+    <string name="cam_photo_saved">照片已保存：%1$s</string>
+    <string name="cam_torch_control_failed">无法控制闪光灯</string>
+    <string name="cam_no_camera_permission">没有相机权限</string>
+    <string name="cam_start_camera_failed">启动相机失败：%1$s</string>
+    <string name="cam_cannot_create_photo_file">无法创建照片文件</string>
+    <string name="cam_capture_failed">拍照失败：%1$s</string>
+    <string name="cam_cannot_load_preview">无法加载预览图</string>
+    <string name="cam_no_camera_mic_permission">没有相机/麦克风权限</string>
+    <string name="cam_cannot_create_video_file">无法创建视频文件</string>
+    <string name="cam_video_record_failed">录像失败：%1$s</string>
+    <string name="cam_cannot_load_video_preview">无法加载视频预览</string>
+
+    <color name="my_toast_bg_color">#B3000000</color>
+    <string name="toast_message">Toast 信息</string>
+    <string name="toasty_debug">(仅测试用)</string>
+</resources>

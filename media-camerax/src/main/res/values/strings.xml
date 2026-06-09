@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="toast_common_loading">loading...</string>
+
+    <string name="cam_photo_saved">Photo saved: %1$s</string>
+    <string name="cam_torch_control_failed">Unable to control flash</string>
+    <string name="cam_no_camera_permission">Camera permission required</string>
+    <string name="cam_start_camera_failed">Failed to start camera: %1$s</string>
+    <string name="cam_cannot_create_photo_file">Unable to create photo file</string>
+    <string name="cam_capture_failed">Capture failed: %1$s</string>
+    <string name="cam_cannot_load_preview">Unable to load preview image</string>
+    <string name="cam_no_camera_mic_permission">Camera and microphone permission required</string>
+    <string name="cam_cannot_create_video_file">Unable to create video file</string>
+    <string name="cam_video_record_failed">Recording failed: %1$s</string>
+    <string name="cam_cannot_load_video_preview">Unable to load video preview</string>
+
+    <color name="my_toast_bg_color">#B3000000</color>
+    <string name="toast_message">Toast message</string>
+    <string name="toasty_debug">(only for debug)</string>
+</resources>
