@@ -378,7 +378,8 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         if (preview != null) {
             preview.setTargetRotation(rotation);
         }
-        if (videoCapture != null) {
+        // 录制开始后不再改变 videoCapture 的 target rotation，锁定录制时的方向
+        if (!isRecording && videoCapture != null) {
             videoCapture.setTargetRotation(rotation);
         }
         applyOrientationDependentViews(rotation);
