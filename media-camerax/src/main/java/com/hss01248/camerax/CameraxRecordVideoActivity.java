@@ -13,6 +13,8 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Size;
 import android.view.Gravity;
+import android.view.OrientationEventListener;
+import android.view.Surface;
 import android.view.View;
 import android.widget.Chronometer;
 import android.widget.FrameLayout;
@@ -96,9 +98,12 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     private VideoView videoPreview;
     private Insets systemBarInsets = Insets.NONE;
 
+    private Preview preview;
     private Camera camera;
     private VideoCapture<Recorder> videoCapture;
     private Recording activeRecording;
+    private OrientationEventListener orientationEventListener;
+    private int currentSurfaceRotation = Surface.ROTATION_0;
     private ExecutorService cameraExecutor;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private Runnable maxDurationRunnable;
@@ -188,6 +193,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         btnPreviewConfirm = findViewById(R.id.btnPreviewConfirm);
         setupWindowInsets();
         setupVideoSeekBar();
+        initOrientationListener();
 
         btnRecord.setVisibility(View.GONE);
         btnSwitchCamera.setVisibility(View.GONE);
@@ -341,6 +347,72 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
     }
 
+    private void initOrientationListener() {
+        orientationEventListener = new OrientationEventListener(this) {
+            @Override
+            public void onOrientationChanged(int orientation) {
+                if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+                    return;
+                }
+                applyTargetRotation(orientationToSurfaceRotation(orientation));
+            }
+        };
+    }
+
+    private static int orientationToSurfaceRotation(int orientation) {
+        if (orientation >= 45 && orientation < 135) {
+            return Surface.ROTATION_270;
+        } else if (orientation >= 135 && orientation < 225) {
+            return Surface.ROTATION_180;
+        } else if (orientation >= 225 && orientation < 315) {
+            return Surface.ROTATION_90;
+        }
+        return Surface.ROTATION_0;
+    }
+
+    private void applyTargetRotation(int rotation) {
+        if (currentSurfaceRotation == rotation) {
+            return;
+        }
+        currentSurfaceRotation = rotation;
+        if (preview != null) {
+            preview.setTargetRotation(rotation);
+        }
+        if (videoCapture != null) {
+            videoCapture.setTargetRotation(rotation);
+        }
+        applyOrientationDependentViews(rotation);
+    }
+
+    /** 按钮位置不动，仅旋转图标 */
+    private void applyOrientationDependentViews(int surfaceRotation) {
+        float degrees = surfaceRotationToDegrees(surfaceRotation);
+        rotateViewForOrientation(btnClose, degrees);
+        rotateViewForOrientation(btnFlash, degrees);
+        rotateViewForOrientation(btnSwitchCamera, degrees);
+        rotateViewForOrientation(btnPreviewCancel, degrees);
+        rotateViewForOrientation(btnPreviewConfirm, degrees);
+    }
+
+    private static void rotateViewForOrientation(View view, float degrees) {
+        if (view != null) {
+            view.setRotation(degrees);
+        }
+    }
+
+    private static float surfaceRotationToDegrees(int surfaceRotation) {
+        switch (surfaceRotation) {
+            case Surface.ROTATION_90:
+                return 90f;
+            case Surface.ROTATION_180:
+                return 180f;
+            case Surface.ROTATION_270:
+                return 270f;
+            default:
+                return 0f;
+        }
+    }
+
     private void updateFlashIcon() {
         switch (flashMode) {
             case FLASH_ON:
@@ -434,10 +506,6 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
                 int minDim = Math.min(previewTargetSize.getWidth(), previewTargetSize.getHeight());
                 Quality videoQuality = resolveVideoQuality(maxDim, minDim);
 
-                int rotation = previewView.getDisplay() != null
-                        ? previewView.getDisplay().getRotation()
-                        : getWindowManager().getDefaultDisplay().getRotation();
-
                 ResolutionSelector previewResSelector = new ResolutionSelector.Builder()
                         .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
                         .setResolutionStrategy(new ResolutionStrategy(
@@ -445,9 +513,9 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
                                 ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER))
                         .build();
 
-                Preview preview = new Preview.Builder()
+                preview = new Preview.Builder()
                         .setResolutionSelector(previewResSelector)
-                        .setTargetRotation(rotation)
+                        .setTargetRotation(currentSurfaceRotation)
                         .build();
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
@@ -459,7 +527,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
                 videoCapture = new VideoCapture.Builder<>(recorder)
                         .setMirrorMode(MirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
                         .build();
-                videoCapture.setTargetRotation(rotation);
+                videoCapture.setTargetRotation(currentSurfaceRotation);
 
                 CameraSelector cameraSelector = new CameraSelector.Builder()
                         .requireLensFacing(lensFacing)
@@ -675,6 +743,22 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         if (!dir.exists() && !dir.mkdirs()) return null;
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         return new File(dir, "VID_" + timestamp + ".mp4");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (orientationEventListener != null && orientationEventListener.canDetectOrientation()) {
+            orientationEventListener.enable();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        if (orientationEventListener != null) {
+            orientationEventListener.disable();
+        }
+        super.onStop();
     }
 
     @Override

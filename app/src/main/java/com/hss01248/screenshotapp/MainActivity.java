@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
         layout.addView(imageView);
 
         if (isVideo) {
-            Glide.with(this).load(filePath).into(imageView);
+            Glide.with(this).asBitmap().load(filePath).into(imageView);
         } else {
             Glide.with(this).load(filePath).into(imageView);
         }
