@@ -5,8 +5,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
@@ -264,6 +262,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
             btnSwitchCamera.setVisibility(View.VISIBLE);
             btnClose.setVisibility(View.VISIBLE);
             applyFlashMode();
+            startCamera();
         });
 
         btnPreviewConfirm.setOnClickListener(v -> {
@@ -656,7 +655,13 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         previewOverlay.setVisibility(View.VISIBLE);
         btnPlayOverlay.setVisibility(View.VISIBLE);
         resetVideoProgressUi();
-        isVideoUriSet = false;
+
+        try {
+            ProcessCameraProvider cameraProvider = ProcessCameraProvider.getInstance(this).get();
+            cameraProvider.unbindAll();
+        } catch (Exception e) {
+            LogUtils.w("unbind camera failed: " + e.getMessage());
+        }
 
         int screenW = previewView.getWidth();
         if (screenW <= 0) {
@@ -699,11 +704,6 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
                 applyPreviewFrameLayout(videoPreview, screenW);
             }
 
-            Bitmap frame = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
-            if (frame != null) {
-                videoPreview.setBackground(new BitmapDrawable(getResources(), frame));
-            }
-
             String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
                 videoDurationMs = Integer.parseInt(durationStr);
@@ -720,6 +720,22 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
                 LogUtils.w("MediaMetadataRetriever release failed: " + e.getMessage());
             }
         }
+
+        videoPreview.setVideoURI(Uri.fromFile(new File(path)));
+        videoPreview.setOnPreparedListener(mp -> {
+            mp.setLooping(false);
+            videoPreview.seekTo(0);
+            if (videoDurationMs <= 0) {
+                videoDurationMs = mp.getDuration();
+                videoSeekBar.setMax(Math.max(videoDurationMs, 1));
+                tvVideoDuration.setText(formatDuration(videoDurationMs));
+            }
+            isVideoUriSet = true;
+        });
+        videoPreview.setOnErrorListener((mp, what, extra) -> {
+            LogUtils.w("VideoView prepare error: what=" + what + " extra=" + extra);
+            return true;
+        });
     }
 
     private static int parseIntMetadata(MediaMetadataRetriever retriever, int key) {
@@ -731,24 +747,32 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     }
 
     private void loadVideoAndPlay() {
-        videoPreview.setVideoURI(Uri.fromFile(new File(lastVideoPath)));
-        videoPreview.setOnPreparedListener(mp -> {
-            mp.setLooping(false);
-            if (videoDurationMs <= 0) {
-                videoDurationMs = mp.getDuration();
-                videoSeekBar.setMax(Math.max(videoDurationMs, 1));
-                tvVideoDuration.setText(formatDuration(videoDurationMs));
-            }
-            videoPreview.setBackground(null);
+        if (!isVideoUriSet) {
+            videoPreview.setVideoURI(Uri.fromFile(new File(lastVideoPath)));
+            videoPreview.setOnPreparedListener(mp -> {
+                mp.setLooping(false);
+                if (videoDurationMs <= 0) {
+                    videoDurationMs = mp.getDuration();
+                    videoSeekBar.setMax(Math.max(videoDurationMs, 1));
+                    tvVideoDuration.setText(formatDuration(videoDurationMs));
+                }
+                isVideoUriSet = true;
+                videoPreview.start();
+                btnPlayOverlay.setVisibility(View.GONE);
+                startProgressUpdater();
+            });
+            videoPreview.setOnErrorListener((mp, what, extra) -> {
+                ToastUtils.showShort(R.string.cam_cannot_load_video_preview);
+                return true;
+            });
+        } else {
+            videoPreview.seekTo(0);
+            videoSeekBar.setProgress(0);
+            tvVideoCurrent.setText(formatDuration(0));
             videoPreview.start();
             btnPlayOverlay.setVisibility(View.GONE);
             startProgressUpdater();
-            isVideoUriSet = true;
-        });
-        videoPreview.setOnErrorListener((mp, what, extra) -> {
-            ToastUtils.showShort(R.string.cam_cannot_load_video_preview);
-            return true;
-        });
+        }
     }
 
     private void resetVideoProgressUi() {
@@ -795,11 +819,6 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
             if (!isVideoUriSet) {
                 loadVideoAndPlay();
             } else {
-                if (videoPreview.getCurrentPosition() <= 1) {
-                    videoPreview.seekTo(0);
-                    videoSeekBar.setProgress(0);
-                    tvVideoCurrent.setText(formatDuration(0));
-                }
                 videoPreview.start();
                 btnPlayOverlay.setVisibility(View.GONE);
                 startProgressUpdater();
@@ -812,7 +831,6 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         stopProgressUpdater();
         if (videoPreview != null) {
             videoPreview.stopPlayback();
-            videoPreview.setBackground(null);
         }
         isVideoUriSet = false;
         resetVideoProgressUi();
@@ -994,6 +1012,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
             btnSwitchCamera.setVisibility(View.VISIBLE);
             btnClose.setVisibility(View.VISIBLE);
             applyFlashMode();
+            startCamera();
             return;
         }
         CameraxCaptureUtil.notifyVideoCancel();
