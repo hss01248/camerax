@@ -653,26 +653,57 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     }
 
     private void showVideoPreview(String path) {
-        int screenW = previewView.getWidth();
-        if (screenW <= 0) {
-            screenW = getResources().getDisplayMetrics().widthPixels;
-        }
-        applyPreviewFrameLayout(videoPreview, screenW);
         previewOverlay.setVisibility(View.VISIBLE);
         btnPlayOverlay.setVisibility(View.VISIBLE);
         resetVideoProgressUi();
         isVideoUriSet = false;
-        extractThumbnailAndDuration(path);
-    }
 
-    private void extractThumbnailAndDuration(String path) {
+        int screenW = previewView.getWidth();
+        if (screenW <= 0) {
+            screenW = getResources().getDisplayMetrics().widthPixels;
+        }
+        int screenH = previewView.getHeight();
+        if (screenH <= 0) {
+            screenH = getResources().getDisplayMetrics().heightPixels;
+        }
+
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
             retriever.setDataSource(path);
+
+            int videoW = parseIntMetadata(retriever, MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            int videoH = parseIntMetadata(retriever, MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            int rotation = parseIntMetadata(retriever, MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+
+            if (rotation == 90 || rotation == 270) {
+                int tmp = videoW; videoW = videoH; videoH = tmp;
+            }
+
+            if (videoW > 0 && videoH > 0) {
+                float videoAspect = (float) videoW / videoH;
+                float screenAspect = (float) screenW / screenH;
+                int layoutW, layoutH;
+                if (videoAspect > screenAspect) {
+                    layoutW = screenW;
+                    layoutH = Math.round(screenW / videoAspect);
+                } else {
+                    layoutH = screenH;
+                    layoutW = Math.round(screenH * videoAspect);
+                }
+                FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) videoPreview.getLayoutParams();
+                lp.width = layoutW;
+                lp.height = layoutH;
+                lp.gravity = Gravity.CENTER;
+                videoPreview.setLayoutParams(lp);
+            } else {
+                applyPreviewFrameLayout(videoPreview, screenW);
+            }
+
             Bitmap frame = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             if (frame != null) {
                 videoPreview.setBackground(new BitmapDrawable(getResources(), frame));
             }
+
             String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             if (durationStr != null) {
                 videoDurationMs = Integer.parseInt(durationStr);
@@ -682,12 +713,21 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
                 videoSeekBar.setProgress(0);
             }
         } catch (Exception e) {
-            LogUtils.w("extractThumbnailAndDuration failed: " + e.getMessage());
+            LogUtils.w("showVideoPreview failed: " + e.getMessage());
+            applyPreviewFrameLayout(videoPreview, screenW);
         } finally {
             try { retriever.release(); } catch (Exception e) {
                 LogUtils.w("MediaMetadataRetriever release failed: " + e.getMessage());
             }
         }
+    }
+
+    private static int parseIntMetadata(MediaMetadataRetriever retriever, int key) {
+        String value = retriever.extractMetadata(key);
+        if (value != null) {
+            try { return Integer.parseInt(value); } catch (NumberFormatException ignored) {}
+        }
+        return 0;
     }
 
     private void loadVideoAndPlay() {
