@@ -35,7 +35,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="flash"
+                android:contentDescription="@string/cam_cd_flash"
                 android:padding="8dp"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_cam_flash_off" />
@@ -90,7 +90,7 @@
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="close"
+            android:contentDescription="@string/cam_cd_close"
             android:padding="10dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_cam_cancel" />
@@ -109,7 +109,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@android:color/transparent"
-                android:contentDescription="record"
+                android:contentDescription="@string/cam_cd_record"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_cam_record_idle" />
         </FrameLayout>
@@ -124,7 +124,7 @@
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="switch camera"
+            android:contentDescription="@string/cam_cd_switch_camera"
             android:padding="10dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_cam_switch" />
@@ -149,7 +149,7 @@
             android:layout_height="64dp"
             android:layout_gravity="center"
             android:background="@android:color/transparent"
-            android:contentDescription="play"
+            android:contentDescription="@string/cam_cd_play"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_cam_play" />
 
@@ -224,7 +224,7 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="cancel"
+                    android:contentDescription="@string/cam_cd_cancel"
                     android:padding="10dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_cam_cancel" />
@@ -239,7 +239,7 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="confirm"
+                    android:contentDescription="@string/cam_cd_confirm"
                     android:padding="10dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_cam_check" />

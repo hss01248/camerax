@@ -181,25 +181,18 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(topSection, (v, insets) -> {
             systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             topSection.setPadding(0, systemBarInsets.top, 0, 0);
-            applyControlBarPadding();
             return insets;
         });
         ViewCompat.setOnApplyWindowInsetsListener(previewBottomBar, (v, insets) -> {
             systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            applyControlBarPadding();
             return insets;
         });
         ViewCompat.requestApplyInsets(topSection);
     }
 
-    private void applyControlBarPadding() {
-        int bottom = systemBarInsets.bottom + dp2px(16);
-       // bottomBar.setPadding(dp2px(32), dp2px(16), dp2px(32), bottom);
-       // previewBottomBar.setPadding(dp2px(32), dp2px(16), dp2px(32), bottom);
-    }
 
     private int dp2px(int dp) {
-        return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
+        return CameraxUtil.dp2px(this, dp);
     }
 
     private void setupListeners() {
@@ -283,15 +276,15 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
         switch (flashMode) {
             case FLASH_ON:
                 btnFlash.setImageResource(R.drawable.ic_cam_flash_on);
-                btnFlash.setContentDescription("flash on");
+                btnFlash.setContentDescription(getString(R.string.cam_cd_flash_on));
                 break;
             case FLASH_AUTO:
                 btnFlash.setImageResource(R.drawable.ic_cam_flash_auto);
-                btnFlash.setContentDescription("flash auto");
+                btnFlash.setContentDescription(getString(R.string.cam_cd_flash_auto));
                 break;
             default:
                 btnFlash.setImageResource(R.drawable.ic_cam_flash_off);
-                btnFlash.setContentDescription("flash off");
+                btnFlash.setContentDescription(getString(R.string.cam_cd_flash_off));
                 break;
         }
     }
@@ -382,14 +375,7 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
     }
 
     private static int orientationToSurfaceRotation(int orientation) {
-        if (orientation >= 45 && orientation < 135) {
-            return Surface.ROTATION_270;
-        } else if (orientation >= 135 && orientation < 225) {
-            return Surface.ROTATION_180;
-        } else if (orientation >= 225 && orientation < 315) {
-            return Surface.ROTATION_90;
-        }
-        return Surface.ROTATION_0;
+        return CameraxUtil.orientationToSurfaceRotation(orientation);
     }
 
     private void applyTargetRotation(int rotation) {
@@ -420,22 +406,11 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
     }
 
     private static void rotateViewForOrientation(View view, float degrees) {
-        if (view != null) {
-            view.setRotation(degrees);
-        }
+        CameraxUtil.rotateViewForOrientation(view, degrees);
     }
 
     private static float surfaceRotationToDegrees(int surfaceRotation) {
-        switch (surfaceRotation) {
-            case Surface.ROTATION_90:
-                return 90f;
-            case Surface.ROTATION_180:
-                return 180f;
-            case Surface.ROTATION_270:
-                return 270f;
-            default:
-                return 0f;
-        }
+        return CameraxUtil.surfaceRotationToDegrees(surfaceRotation);
     }
 
     @Override
@@ -719,7 +694,23 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
 
     @Nullable
     private Bitmap loadBitmapWithExifOrientation(String path) {
-        Bitmap bitmap = BitmapFactory.decodeFile(path);
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(path, opts);
+        if (opts.outWidth <= 0 || opts.outHeight <= 0) {
+            return null;
+        }
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        int maxSide = Math.max(screenW, screenH);
+        int sampleSize = 1;
+        while (opts.outWidth / sampleSize > maxSide * 2
+                || opts.outHeight / sampleSize > maxSide * 2) {
+            sampleSize *= 2;
+        }
+        opts.inJustDecodeBounds = false;
+        opts.inSampleSize = sampleSize;
+        Bitmap bitmap = BitmapFactory.decodeFile(path, opts);
         if (bitmap == null) {
             return null;
         }
@@ -750,8 +741,24 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        if (previewOverlay != null && previewOverlay.getVisibility() == View.VISIBLE) {
+            if (lastPhotoPath != null) {
+                new File(lastPhotoPath).delete();
+                lastPhotoPath = null;
+            }
+            previewOverlay.setVisibility(View.GONE);
+            return;
+        }
+        CameraxCaptureUtil.notifyPhotoCancel();
+        setResult(RESULT_CANCELED);
+        super.onBackPressed();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
+        CameraxCaptureUtil.pendingPhotoCallback = null;
         if (cameraExecutor != null) {
             cameraExecutor.shutdownNow();
         }

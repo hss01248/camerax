@@ -308,17 +308,14 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         ViewCompat.setOnApplyWindowInsetsListener(topSection, (v, insets) -> {
             systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             topSection.setPadding(0, systemBarInsets.top, 0, 0);
-            applyBottomBarPadding();
             return insets;
         });
         ViewCompat.setOnApplyWindowInsetsListener(bottomBar, (v, insets) -> {
             systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            applyBottomBarPadding();
             return insets;
         });
         ViewCompat.setOnApplyWindowInsetsListener(previewControls, (v, insets) -> {
             systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            applyBottomBarPadding();
             return insets;
         });
         ViewCompat.requestApplyInsets(topSection);
@@ -348,11 +345,6 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         });
     }
 
-    private void applyBottomBarPadding() {
-        // int bottom = systemBarInsets.bottom + dp2px(16);
-        // bottomBar.setPadding(dp2px(32), dp2px(16), dp2px(32), bottom);
-        // previewBottomBar.setPadding(dp2px(32), dp2px(16), dp2px(32), bottom);
-    }
 
     private String formatDuration(int millis) {
         int totalSeconds = Math.max(0, millis / 1000);
@@ -362,7 +354,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     }
 
     private int dp2px(int dp) {
-        return (int) (dp * getResources().getDisplayMetrics().density + 0.5f);
+        return CameraxUtil.dp2px(this, dp);
     }
 
     private void initOrientationListener() {
@@ -378,14 +370,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     }
 
     private static int orientationToSurfaceRotation(int orientation) {
-        if (orientation >= 45 && orientation < 135) {
-            return Surface.ROTATION_270;
-        } else if (orientation >= 135 && orientation < 225) {
-            return Surface.ROTATION_180;
-        } else if (orientation >= 225 && orientation < 315) {
-            return Surface.ROTATION_90;
-        }
-        return Surface.ROTATION_0;
+        return CameraxUtil.orientationToSurfaceRotation(orientation);
     }
 
     private void applyTargetRotation(int rotation) {
@@ -414,37 +399,26 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     }
 
     private static void rotateViewForOrientation(View view, float degrees) {
-        if (view != null) {
-            view.setRotation(degrees);
-        }
+        CameraxUtil.rotateViewForOrientation(view, degrees);
     }
 
     private static float surfaceRotationToDegrees(int surfaceRotation) {
-        switch (surfaceRotation) {
-            case Surface.ROTATION_90:
-                return 90f;
-            case Surface.ROTATION_180:
-                return 180f;
-            case Surface.ROTATION_270:
-                return 270f;
-            default:
-                return 0f;
-        }
+        return CameraxUtil.surfaceRotationToDegrees(surfaceRotation);
     }
 
     private void updateFlashIcon() {
         switch (flashMode) {
             case FLASH_ON:
                 btnFlash.setImageResource(R.drawable.ic_cam_flash_on);
-                btnFlash.setContentDescription("flash on");
+                btnFlash.setContentDescription(getString(R.string.cam_cd_flash_on));
                 break;
             case FLASH_AUTO:
                 btnFlash.setImageResource(R.drawable.ic_cam_flash_auto);
-                btnFlash.setContentDescription("flash auto");
+                btnFlash.setContentDescription(getString(R.string.cam_cd_flash_auto));
                 break;
             default:
                 btnFlash.setImageResource(R.drawable.ic_cam_flash_off);
-                btnFlash.setContentDescription("flash off");
+                btnFlash.setContentDescription(getString(R.string.cam_cd_flash_off));
                 break;
         }
     }
@@ -707,9 +681,12 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
                 tvVideoCurrent.setText(formatDuration(0));
                 videoSeekBar.setProgress(0);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            LogUtils.w("extractThumbnailAndDuration failed: " + e.getMessage());
         } finally {
-            try { retriever.release(); } catch (Exception ignored) {}
+            try { retriever.release(); } catch (Exception e) {
+                LogUtils.w("MediaMetadataRetriever release failed: " + e.getMessage());
+            }
         }
     }
 
@@ -962,8 +939,32 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        if (isRecording) {
+            stopRecording();
+            return;
+        }
+        if (isPreviewVisible()) {
+            if (lastVideoPath != null) {
+                new File(lastVideoPath).delete();
+                lastVideoPath = null;
+            }
+            releaseVideoPreview();
+            previewOverlay.setVisibility(View.GONE);
+            btnSwitchCamera.setVisibility(View.VISIBLE);
+            btnClose.setVisibility(View.VISIBLE);
+            applyFlashMode();
+            return;
+        }
+        CameraxCaptureUtil.notifyVideoCancel();
+        setResult(RESULT_CANCELED);
+        super.onBackPressed();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
+        CameraxCaptureUtil.pendingVideoCallback = null;
         clearMaxDurationCallback();
         if (activeRecording != null) {
             activeRecording.stop();

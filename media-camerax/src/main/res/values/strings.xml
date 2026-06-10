@@ -14,6 +14,19 @@
     <string name="cam_video_record_failed">Recording failed: %1$s</string>
     <string name="cam_cannot_load_video_preview">Unable to load video preview</string>
 
+    <string name="cam_cd_flash">Flash</string>
+    <string name="cam_cd_flash_on">Flash on</string>
+    <string name="cam_cd_flash_auto">Flash auto</string>
+    <string name="cam_cd_flash_off">Flash off</string>
+    <string name="cam_cd_settings">Settings</string>
+    <string name="cam_cd_close">Close</string>
+    <string name="cam_cd_capture">Capture</string>
+    <string name="cam_cd_record">Record</string>
+    <string name="cam_cd_switch_camera">Switch camera</string>
+    <string name="cam_cd_cancel">Cancel</string>
+    <string name="cam_cd_confirm">Confirm</string>
+    <string name="cam_cd_play">Play</string>
+
     <color name="my_toast_bg_color">#B3000000</color>
     <string name="toast_message">Toast message</string>
     <string name="toasty_debug">(only for debug)</string>
