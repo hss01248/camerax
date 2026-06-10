@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="my_toast_bg_color">#B3000000</color>
+    <color name="cam_ratio_selected">#FFFFCC00</color>
+    <color name="cam_ratio_normal">#FF666666</color>
+</resources>

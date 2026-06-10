@@ -45,7 +45,19 @@ final class PhotoExifNormalizer {
 
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-            Bitmap src = BitmapFactory.decodeFile(path, options);
+            Bitmap src;
+            try {
+                src = BitmapFactory.decodeFile(path, options);
+            } catch (OutOfMemoryError oom) {
+                LogUtils.w("OOM decoding photo, retrying with RGB_565: " + path);
+                options.inPreferredConfig = Bitmap.Config.RGB_565;
+                try {
+                    src = BitmapFactory.decodeFile(path, options);
+                } catch (OutOfMemoryError oom2) {
+                    LogUtils.w("OOM even with RGB_565, skipping normalize: " + path);
+                    return false;
+                }
+            }
             if (src == null) {
                 LogUtils.w("decode photo failed: " + path);
                 return false;

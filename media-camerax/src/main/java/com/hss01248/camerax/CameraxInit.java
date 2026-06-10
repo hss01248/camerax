@@ -10,20 +10,12 @@ import java.util.List;
 
 
 /**
- * @Despciption todo
+ * @Description CameraX module initializer
  * @Author hss
  * @Date 07/11/2022 10:41
  * @Version 1.0
  */
-public class CameraxInit implements  Initializer<String> {
-
-
-    private boolean checkInit() {
-        return false;
-    }
-
-
-
+public class CameraxInit implements Initializer<String> {
 
 
     @NonNull

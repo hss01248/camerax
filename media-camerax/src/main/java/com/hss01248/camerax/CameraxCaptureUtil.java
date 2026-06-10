@@ -12,7 +12,7 @@ public class CameraxCaptureUtil {
     public static final int REQUEST_CODE_TAKE_PHOTO = 0x1001;
     public static final int REQUEST_CODE_RECORD_VIDEO = 0x1002;
 
-    static CameraxCallback pendingPhotoCallback;
+    static volatile CameraxCallback pendingPhotoCallback;
     // TODO: 录像功能暂时禁用，pendingVideoCallback 已注释
     // static CameraxCallback pendingVideoCallback;
 

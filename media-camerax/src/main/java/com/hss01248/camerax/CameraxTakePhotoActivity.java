@@ -46,7 +46,7 @@ import com.blankj.utilcode.util.LogUtils;
 import com.blankj.utilcode.util.PermissionUtils;
 import com.blankj.utilcode.util.ToastUtils;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hss01248.media.camerax.R;
+import com.hss01248.camerax.R;
 import com.hss01248.permission.MyPermissions;
 
 import java.io.File;
@@ -350,21 +350,21 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
     }
 
     private void updateRatioSelection() {
-        int selectedColor = 0xFFFFCC00;
-        int normalColor = 0xFF666666;
+        int selectedColor = ContextCompat.getColor(this, R.color.cam_ratio_selected);
+        int normalColor = ContextCompat.getColor(this, R.color.cam_ratio_normal);
 
-        setRatioBtnStyle(btnRatio1_1, currentRatio == RATIO_1_1 ? selectedColor : normalColor);
-        setRatioBtnStyle(btnRatio3_4, currentRatio == RATIO_3_4 ? selectedColor : normalColor);
-        setRatioBtnStyle(btnRatio9_16, currentRatio == RATIO_9_16 ? selectedColor : normalColor);
-        setRatioBtnStyle(btnRatioFull, currentRatio == RATIO_FULL ? selectedColor : normalColor);
+        setRatioBtnStyle(btnRatio1_1, currentRatio == RATIO_1_1, selectedColor, normalColor);
+        setRatioBtnStyle(btnRatio3_4, currentRatio == RATIO_3_4, selectedColor, normalColor);
+        setRatioBtnStyle(btnRatio9_16, currentRatio == RATIO_9_16, selectedColor, normalColor);
+        setRatioBtnStyle(btnRatioFull, currentRatio == RATIO_FULL, selectedColor, normalColor);
     }
 
-    private void setRatioBtnStyle(TextView tv, int bgColor) {
+    private void setRatioBtnStyle(TextView tv, boolean selected, int selectedColor, int normalColor) {
         GradientDrawable gd = new GradientDrawable();
         gd.setCornerRadius(16f);
-        gd.setColor(bgColor);
+        gd.setColor(selected ? selectedColor : normalColor);
         tv.setBackground(gd);
-        tv.setTextColor(bgColor == 0xFFFFCC00 ? Color.BLACK : Color.WHITE);
+        tv.setTextColor(selected ? Color.BLACK : Color.WHITE);
     }
 
     private void initOrientationListener() {
@@ -485,8 +485,10 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
                 Size previewSize = calcPreviewSize(screenWidth, screenHeight);
                 Size captureSize = calcCaptureSize();
 
+                int displayRotation = getWindowManager().getDefaultDisplay().getRotation();
+
                 Preview.Builder previewBuilder = new Preview.Builder()
-                        .setTargetRotation(currentSurfaceRotation);
+                        .setTargetRotation(displayRotation);
 
                 ImageCapture.Builder captureBuilder = new ImageCapture.Builder()
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -595,6 +597,7 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
 
     /**
      * Adjust PreviewView layout to match the selected aspect ratio.
+     * Uses the shorter edge as base to work correctly in both portrait and landscape.
      */
     private void adjustPreviewViewRatio(int screenW, int screenH) {
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) previewView.getLayoutParams();
@@ -707,7 +710,16 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
 
     @Nullable
     private Bitmap loadBitmapWithExifOrientation(String path) {
-        Bitmap bitmap = BitmapFactory.decodeFile(path);
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(path, opts);
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        int maxEdge = Math.max(screenW, screenH);
+        opts.inSampleSize = calcInSampleSize(opts.outWidth, opts.outHeight, maxEdge, maxEdge);
+        opts.inJustDecodeBounds = false;
+
+        Bitmap bitmap = BitmapFactory.decodeFile(path, opts);
         if (bitmap == null) {
             return null;
         }
@@ -730,11 +742,33 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
         }
     }
 
+    private static int calcInSampleSize(int rawW, int rawH, int reqW, int reqH) {
+        int inSampleSize = 1;
+        if (rawW > reqW || rawH > reqH) {
+            int halfW = rawW / 2;
+            int halfH = rawH / 2;
+            while ((halfW / inSampleSize) >= reqW && (halfH / inSampleSize) >= reqH) {
+                inSampleSize *= 2;
+            }
+        }
+        return inSampleSize;
+    }
+
     private File createFile() {
-        File dir = new File(getExternalFilesDir(Environment.DIRECTORY_DCIM), "CameraXPhoto");
+        File externalDir = getExternalFilesDir(Environment.DIRECTORY_DCIM);
+        if (externalDir == null) return null;
+        File dir = new File(externalDir, "CameraXPhoto");
         if (!dir.exists() && !dir.mkdirs()) return null;
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         return new File(dir, "IMG_" + timestamp + ".jpg");
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onBackPressed() {
+        CameraxCaptureUtil.notifyPhotoCancel();
+        setResult(RESULT_CANCELED);
+        super.onBackPressed();
     }
 
     @Override
