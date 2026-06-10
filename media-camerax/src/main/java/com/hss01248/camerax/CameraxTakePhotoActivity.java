@@ -395,9 +395,9 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
             return;
         }
         currentSurfaceRotation = rotation;
-        if (preview != null) {
-            preview.setTargetRotation(rotation);
-        }
+        // Preview 的 targetRotation 保持与显示方向一致（Activity 锁定竖屏，始终为 ROTATION_0），
+        // 否则 CameraX 会错误地缩放预览流导致变形。
+        // 只有 ImageCapture 需要跟随设备物理方向，确保照片 EXIF 方向正确。
         if (imageCapture != null) {
             imageCapture.setTargetRotation(rotation);
         }
