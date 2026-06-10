@@ -13,7 +13,8 @@ public class CameraxCaptureUtil {
     public static final int REQUEST_CODE_RECORD_VIDEO = 0x1002;
 
     static CameraxCallback pendingPhotoCallback;
-    static CameraxCallback pendingVideoCallback;
+    // TODO: 录像功能暂时禁用，pendingVideoCallback 已注释
+    // static CameraxCallback pendingVideoCallback;
 
     // ========== 带回调的方法 ==========
 
@@ -35,34 +36,24 @@ public class CameraxCaptureUtil {
         CameraxTakePhotoActivity.start(context, preferFrontCamera);
     }
 
-    /**
-     * 录像（带回调，回调返回文件路径），无最大时长限制，默认后置摄像头
-     */
+    /*
+     * TODO: 录像功能暂时禁用
+     *
     public static void recordVideo(Context context, CameraxCallback callback) {
         recordVideo(context, callback, 0);
     }
 
-    /**
-     * 录像（带回调，回调返回文件路径），默认后置摄像头
-     *
-     * @param maxDurationSeconds 最大录制时长（秒），小于等于 0 表示不限制
-     */
     public static void recordVideo(Context context, CameraxCallback callback,
                                    int maxDurationSeconds) {
         recordVideo(context, callback, maxDurationSeconds, false);
     }
 
-    /**
-     * 录像（带回调，回调返回文件路径）
-     *
-     * @param maxDurationSeconds  最大录制时长（秒），小于等于 0 表示不限制
-     * @param preferFrontCamera   是否优先使用前置摄像头
-     */
     public static void recordVideo(Context context, CameraxCallback callback,
                                    int maxDurationSeconds, boolean preferFrontCamera) {
         pendingVideoCallback = callback;
         CameraxRecordVideoActivity.start(context, maxDurationSeconds, preferFrontCamera);
     }
+    */
 
     // ========== 基于 startActivityForResult 的方法 ==========
 
@@ -78,6 +69,9 @@ public class CameraxCaptureUtil {
         CameraxTakePhotoActivity.startForResult(activity, requestCode, preferFrontCamera);
     }
 
+    /*
+     * TODO: 录像功能暂时禁用
+     *
     public static void recordVideo(Activity activity) {
         recordVideo(activity, REQUEST_CODE_RECORD_VIDEO, 0);
     }
@@ -95,6 +89,7 @@ public class CameraxCaptureUtil {
         CameraxRecordVideoActivity.startForResult(activity, requestCode, maxDurationSeconds,
                 preferFrontCamera);
     }
+    */
 
     // ========== 无回调的启动方法 ==========
 
@@ -106,6 +101,9 @@ public class CameraxCaptureUtil {
         CameraxTakePhotoActivity.start(context, preferFrontCamera);
     }
 
+    /*
+     * TODO: 录像功能暂时禁用
+     *
     public static void openRecordVideo(Context context) {
         openRecordVideo(context, 0);
     }
@@ -118,6 +116,7 @@ public class CameraxCaptureUtil {
                                        boolean preferFrontCamera) {
         CameraxRecordVideoActivity.start(context, maxDurationSeconds, preferFrontCamera);
     }
+    */
 
     // ========== 从 onActivityResult 提取结果 ==========
 
@@ -126,10 +125,14 @@ public class CameraxCaptureUtil {
         return data.getStringExtra(CameraxTakePhotoActivity.EXTRA_PHOTO_PATH);
     }
 
+    /*
+     * TODO: 录像功能暂时禁用
+     *
     public static String getVideoPath(Intent data) {
         if (data == null) return null;
         return data.getStringExtra(CameraxRecordVideoActivity.EXTRA_VIDEO_PATH);
     }
+    */
 
     // ========== 内部回调分发 ==========
 
@@ -151,6 +154,9 @@ public class CameraxCaptureUtil {
         if (cb != null) cb.onError(msg);
     }
 
+    /*
+     * TODO: 录像功能暂时禁用
+     *
     static void notifyVideoSuccess(String path) {
         CameraxCallback cb = pendingVideoCallback;
         pendingVideoCallback = null;
@@ -168,4 +174,5 @@ public class CameraxCaptureUtil {
         pendingVideoCallback = null;
         if (cb != null) cb.onError(msg);
     }
+    */
 }

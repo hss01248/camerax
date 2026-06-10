@@ -69,6 +69,9 @@ public class MainActivity extends AppCompatActivity {
         }, true);
     }
 
+    /*
+     * TODO: 录像功能暂时禁用
+     *
     public void cameraxRecordVideoWithCallback(View view) {
         CameraxCaptureUtil.recordVideo(this, new CameraxCallback() {
             @Override
@@ -96,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }, 0, true);
     }
+    */
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {

@@ -31,9 +31,7 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
-import androidx.camera.core.resolutionselector.AspectRatioStrategy;
-import androidx.camera.core.resolutionselector.ResolutionSelector;
-import androidx.camera.core.resolutionselector.ResolutionStrategy;
+import androidx.camera.core.AspectRatio;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
@@ -487,36 +485,26 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
                 Size previewSize = calcPreviewSize(screenWidth, screenHeight);
                 Size captureSize = calcCaptureSize();
 
-                AspectRatioStrategy ars = getAspectRatioStrategy();
+                Preview.Builder previewBuilder = new Preview.Builder()
+                        .setTargetRotation(currentSurfaceRotation);
 
-                ResolutionSelector previewResSelector = new ResolutionSelector.Builder()
-                        .setAspectRatioStrategy(ars)
-                        .setResolutionStrategy(new ResolutionStrategy(
-                                previewSize,
-                                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER))
-                        .build();
+                ImageCapture.Builder captureBuilder = new ImageCapture.Builder()
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                        .setTargetRotation(currentSurfaceRotation);
 
-                preview = new Preview.Builder()
-                        .setResolutionSelector(previewResSelector)
-                        .setTargetRotation(currentSurfaceRotation)
-                        .build();
+                if (currentRatio == RATIO_1_1) {
+                    previewBuilder.setTargetResolution(previewSize);
+                    captureBuilder.setTargetResolution(captureSize);
+                } else {
+                    int aspectRatio = getTargetAspectRatio();
+                    previewBuilder.setTargetAspectRatio(aspectRatio);
+                    captureBuilder.setTargetAspectRatio(aspectRatio);
+                }
+
+                preview = previewBuilder.build();
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-                ResolutionSelector captureResSelector = new ResolutionSelector.Builder()
-                        .setAspectRatioStrategy(ars)
-                        .setResolutionStrategy(new ResolutionStrategy(
-                                captureSize,
-                                ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER))
-                        .build();
-
-                imageCapture = new ImageCapture.Builder()
-                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                        .setTargetRotation(currentSurfaceRotation)
-                        .setResolutionSelector(captureResSelector)
-                        // 指定保存的 JPEG 质量（范围 1-100）
-                        // 默认情况下，如果不显式设置，CameraX 会根据你选择的 CaptureMode 自动分配默认值（通常是 95 或 100）
-                        .setJpegQuality(JPEG_QUALITY)
-                        .build();
+                imageCapture = captureBuilder.build();
 
                 CameraSelector cameraSelector = new CameraSelector.Builder()
                         .requireLensFacing(lensFacing)
@@ -535,13 +523,13 @@ public class CameraxTakePhotoActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
-    private AspectRatioStrategy getAspectRatioStrategy() {
+    private int getTargetAspectRatio() {
         switch (currentRatio) {
             case RATIO_9_16:
             case RATIO_FULL:
-                return AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY;
+                return AspectRatio.RATIO_16_9;
             default:
-                return AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY;
+                return AspectRatio.RATIO_4_3;
         }
     }
 

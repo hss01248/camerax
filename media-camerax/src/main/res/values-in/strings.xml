@@ -13,6 +13,7 @@
     <string name="cam_cannot_create_video_file">Tidak dapat membuat file video</string>
     <string name="cam_video_record_failed">Gagal merekam: %1$s</string>
     <string name="cam_cannot_load_video_preview">Tidak dapat memuat pratinjau video</string>
+    <string name="cam_ratio_full">Penuh</string>
 
     <color name="my_toast_bg_color">#B3000000</color>
     <string name="toast_message">Pesan toast</string>

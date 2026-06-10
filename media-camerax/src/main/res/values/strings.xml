@@ -13,6 +13,7 @@
     <string name="cam_cannot_create_video_file">Unable to create video file</string>
     <string name="cam_video_record_failed">Recording failed: %1$s</string>
     <string name="cam_cannot_load_video_preview">Unable to load video preview</string>
+    <string name="cam_ratio_full">Full</string>
 
     <color name="my_toast_bg_color">#B3000000</color>
     <string name="toast_message">Toast message</string>

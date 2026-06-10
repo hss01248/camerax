@@ -49,6 +49,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
+            <!-- TODO: 录像功能暂时禁用
             <androidx.appcompat.widget.AppCompatButton
                 android:text="camerax-录像(回调)"
                 android:onClick="cameraxRecordVideoWithCallback"
@@ -60,6 +61,7 @@
                 android:onClick="cameraxRecordVideoFrontWithCallback"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
+            -->
 
         </com.google.android.flexbox.FlexboxLayout>
 

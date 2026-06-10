@@ -13,6 +13,7 @@
     <string name="cam_cannot_create_video_file">无法创建视频文件</string>
     <string name="cam_video_record_failed">录像失败：%1$s</string>
     <string name="cam_cannot_load_video_preview">无法加载视频预览</string>
+    <string name="cam_ratio_full">全屏</string>
 
     <color name="my_toast_bg_color">#B3000000</color>
     <string name="toast_message">Toast 信息</string>
