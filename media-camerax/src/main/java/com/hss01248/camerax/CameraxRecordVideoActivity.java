@@ -5,7 +5,14 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -118,6 +125,13 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     private File currentVideoFile;
     private String lastVideoPath;
 
+    private AudioManager audioManager;
+    private AudioFocusRequest recordingFocusRequest;
+    private AudioFocusRequest playbackFocusRequest;
+    private boolean hasRecordingAudioFocus = false;
+    private boolean hasPlaybackAudioFocus = false;
+    private boolean isVideoUriSet = false;
+
     public static void start(Context context) {
         start(context, 0);
     }
@@ -185,6 +199,9 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         previewControls = findViewById(R.id.previewControls);
         previewBottomBar = findViewById(R.id.previewBottomBar);
         videoPreview = findViewById(R.id.videoPreview);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            videoPreview.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE);
+        }
         btnPlayOverlay = findViewById(R.id.btnPlayOverlay);
         videoSeekBar = findViewById(R.id.videoSeekBar);
         tvVideoCurrent = findViewById(R.id.tvVideoCurrent);
@@ -266,6 +283,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         videoPreview.setOnCompletionListener(mp -> {
             btnPlayOverlay.setVisibility(View.VISIBLE);
             stopProgressUpdater();
+            abandonPlaybackAudioFocus();
             if (videoDurationMs > 0) {
                 videoSeekBar.setProgress(videoDurationMs);
                 tvVideoCurrent.setText(formatDuration(videoDurationMs));
@@ -580,9 +598,12 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     private void startRecording() {
         if (videoCapture == null) return;
 
+        requestRecordingAudioFocus();
+
         currentVideoFile = createVideoFile();
         if (currentVideoFile == null) {
             ToastUtils.showShort(R.string.cam_cannot_create_video_file);
+            abandonRecordingAudioFocus();
             return;
         }
 
@@ -606,6 +627,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
             activeRecording.stop();
             activeRecording = null;
         }
+        abandonRecordingAudioFocus();
     }
 
     private void onRecordingStarted() {
@@ -665,15 +687,46 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         previewOverlay.setVisibility(View.VISIBLE);
         btnPlayOverlay.setVisibility(View.VISIBLE);
         resetVideoProgressUi();
-        videoPreview.setVideoURI(Uri.fromFile(new File(path)));
+        isVideoUriSet = false;
+        extractThumbnailAndDuration(path);
+    }
+
+    private void extractThumbnailAndDuration(String path) {
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(path);
+            Bitmap frame = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            if (frame != null) {
+                videoPreview.setBackground(new BitmapDrawable(getResources(), frame));
+            }
+            String durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (durationStr != null) {
+                videoDurationMs = Integer.parseInt(durationStr);
+                videoSeekBar.setMax(Math.max(videoDurationMs, 1));
+                tvVideoDuration.setText(formatDuration(videoDurationMs));
+                tvVideoCurrent.setText(formatDuration(0));
+                videoSeekBar.setProgress(0);
+            }
+        } catch (Exception ignored) {
+        } finally {
+            try { retriever.release(); } catch (Exception ignored) {}
+        }
+    }
+
+    private void loadVideoAndPlay() {
+        videoPreview.setVideoURI(Uri.fromFile(new File(lastVideoPath)));
         videoPreview.setOnPreparedListener(mp -> {
             mp.setLooping(false);
-            videoDurationMs = mp.getDuration();
-            videoSeekBar.setMax(Math.max(videoDurationMs, 1));
-            tvVideoDuration.setText(formatDuration(videoDurationMs));
-            tvVideoCurrent.setText(formatDuration(0));
-            videoSeekBar.setProgress(0);
-            mp.seekTo(1);
+            if (videoDurationMs <= 0) {
+                videoDurationMs = mp.getDuration();
+                videoSeekBar.setMax(Math.max(videoDurationMs, 1));
+                tvVideoDuration.setText(formatDuration(videoDurationMs));
+            }
+            videoPreview.setBackground(null);
+            videoPreview.start();
+            btnPlayOverlay.setVisibility(View.GONE);
+            startProgressUpdater();
+            isVideoUriSet = true;
         });
         videoPreview.setOnErrorListener((mp, what, extra) -> {
             ToastUtils.showShort(R.string.cam_cannot_load_video_preview);
@@ -719,24 +772,159 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
             videoPreview.pause();
             btnPlayOverlay.setVisibility(View.VISIBLE);
             stopProgressUpdater();
+            abandonPlaybackAudioFocus();
         } else {
-            if (videoPreview.getCurrentPosition() <= 1) {
-                videoPreview.seekTo(0);
-                videoSeekBar.setProgress(0);
-                tvVideoCurrent.setText(formatDuration(0));
+            requestPlaybackAudioFocus();
+            if (!isVideoUriSet) {
+                loadVideoAndPlay();
+            } else {
+                if (videoPreview.getCurrentPosition() <= 1) {
+                    videoPreview.seekTo(0);
+                    videoSeekBar.setProgress(0);
+                    tvVideoCurrent.setText(formatDuration(0));
+                }
+                videoPreview.start();
+                btnPlayOverlay.setVisibility(View.GONE);
+                startProgressUpdater();
             }
-            videoPreview.start();
-            btnPlayOverlay.setVisibility(View.GONE);
-            startProgressUpdater();
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void releaseVideoPreview() {
         stopProgressUpdater();
         if (videoPreview != null) {
             videoPreview.stopPlayback();
+            videoPreview.setBackground(null);
         }
+        isVideoUriSet = false;
         resetVideoProgressUi();
+        abandonPlaybackAudioFocus();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O && audioManager != null) {
+            audioManager.abandonAudioFocus(null);
+        }
+    }
+
+    private void initAudioManager() {
+        if (audioManager == null) {
+            audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean requestRecordingAudioFocus() {
+        initAudioManager();
+        if (hasRecordingAudioFocus) return true;
+        int result;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            AudioAttributes attrs = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build();
+            recordingFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                    .setAudioAttributes(attrs)
+                    .setOnAudioFocusChangeListener(focusChange -> {
+                        if (focusChange == AudioManager.AUDIOFOCUS_LOSS
+                                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                            mainHandler.post(() -> {
+                                if (isRecording) {
+                                    stopRecording();
+                                }
+                            });
+                        }
+                    })
+                    .build();
+            result = audioManager.requestAudioFocus(recordingFocusRequest);
+        } else {
+            result = audioManager.requestAudioFocus(
+                    recordingFocusChangeListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
+        }
+        hasRecordingAudioFocus = (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
+        return hasRecordingAudioFocus;
+    }
+
+    private final AudioManager.OnAudioFocusChangeListener recordingFocusChangeListener = focusChange -> {
+        if (focusChange == AudioManager.AUDIOFOCUS_LOSS
+                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+            mainHandler.post(() -> {
+                if (isRecording) {
+                    stopRecording();
+                }
+            });
+        }
+    };
+
+    @SuppressWarnings("deprecation")
+    private void abandonRecordingAudioFocus() {
+        if (!hasRecordingAudioFocus || audioManager == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && recordingFocusRequest != null) {
+            audioManager.abandonAudioFocusRequest(recordingFocusRequest);
+        } else {
+            audioManager.abandonAudioFocus(recordingFocusChangeListener);
+        }
+        hasRecordingAudioFocus = false;
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean requestPlaybackAudioFocus() {
+        initAudioManager();
+        if (hasPlaybackAudioFocus) return true;
+        int result;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            AudioAttributes attrs = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+                    .build();
+            playbackFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    .setAudioAttributes(attrs)
+                    .setOnAudioFocusChangeListener(focusChange -> {
+                        if (focusChange == AudioManager.AUDIOFOCUS_LOSS
+                                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                            mainHandler.post(() -> {
+                                if (videoPreview != null && videoPreview.isPlaying()) {
+                                    videoPreview.pause();
+                                    btnPlayOverlay.setVisibility(View.VISIBLE);
+                                    stopProgressUpdater();
+                                }
+                            });
+                        }
+                    })
+                    .build();
+            result = audioManager.requestAudioFocus(playbackFocusRequest);
+        } else {
+            result = audioManager.requestAudioFocus(
+                    playbackFocusChangeListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        }
+        hasPlaybackAudioFocus = (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
+        return hasPlaybackAudioFocus;
+    }
+
+    private final AudioManager.OnAudioFocusChangeListener playbackFocusChangeListener = focusChange -> {
+        if (focusChange == AudioManager.AUDIOFOCUS_LOSS
+                || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+            mainHandler.post(() -> {
+                if (videoPreview != null && videoPreview.isPlaying()) {
+                    videoPreview.pause();
+                    btnPlayOverlay.setVisibility(View.VISIBLE);
+                    stopProgressUpdater();
+                }
+            });
+        }
+    };
+
+    @SuppressWarnings("deprecation")
+    private void abandonPlaybackAudioFocus() {
+        if (!hasPlaybackAudioFocus || audioManager == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && playbackFocusRequest != null) {
+            audioManager.abandonAudioFocusRequest(playbackFocusRequest);
+        } else {
+            audioManager.abandonAudioFocus(playbackFocusChangeListener);
+        }
+        hasPlaybackAudioFocus = false;
     }
 
     private File createVideoFile() {
@@ -769,6 +957,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
             videoPreview.pause();
             btnPlayOverlay.setVisibility(View.VISIBLE);
             stopProgressUpdater();
+            abandonPlaybackAudioFocus();
         }
     }
 
@@ -779,6 +968,7 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         if (activeRecording != null) {
             activeRecording.stop();
         }
+        abandonRecordingAudioFocus();
         releaseVideoPreview();
         if (cameraExecutor != null) {
             cameraExecutor.shutdownNow();
