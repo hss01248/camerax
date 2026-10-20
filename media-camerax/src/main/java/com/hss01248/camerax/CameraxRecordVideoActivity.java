@@ -304,6 +304,9 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
     }
 
     private void setupWindowInsets() {
+        final int bottomBarBaseBottom = bottomBar.getPaddingBottom();
+        final int previewControlsBaseBottom = previewControls.getPaddingBottom();
+
         ViewCompat.setOnApplyWindowInsetsListener(topSection, (v, insets) -> {
             systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             topSection.setPadding(0, systemBarInsets.top, 0, 0);
@@ -311,13 +314,25 @@ public class CameraxRecordVideoActivity extends AppCompatActivity {
         });
         ViewCompat.setOnApplyWindowInsetsListener(bottomBar, (v, insets) -> {
             systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    v.getPaddingTop(),
+                    v.getPaddingRight(),
+                    bottomBarBaseBottom + systemBarInsets.bottom);
             return insets;
         });
         ViewCompat.setOnApplyWindowInsetsListener(previewControls, (v, insets) -> {
             systemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(
+                    v.getPaddingLeft(),
+                    v.getPaddingTop(),
+                    v.getPaddingRight(),
+                    previewControlsBaseBottom + systemBarInsets.bottom);
             return insets;
         });
         ViewCompat.requestApplyInsets(topSection);
+        ViewCompat.requestApplyInsets(bottomBar);
+        ViewCompat.requestApplyInsets(previewControls);
     }
 
     private void setupVideoSeekBar() {

@@ -1,5 +1,5 @@
 
-rootProject.name = "ScreenshotApp"
+rootProject.name = "camerax"
 
 include ':screenshoot'
 include ':app'
